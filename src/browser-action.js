@@ -14,6 +14,7 @@ module.exports = function(RED) {
         let height = config.height || msg.height
         let width = config.width || msg.width
         let keys = config.keysArr || msg.keysArr
+        let filePath = config.filePath || msg.filePath
 
         if (config.action === 'getUrl') {
           node.log = 'Get the url of the web page.'
@@ -42,9 +43,23 @@ module.exports = function(RED) {
         } else if (config.action === 'takeScreenShot') {
           node.log = 'Take the screenshot of the browser window.'
           msg.payload = await browser.takeScreenshot()
+        } else if (config.action === 'takeFullScreenShot') {
+          node.log = 'Take the full screenshot of the browser window.'
+          const puppeteerBrowser = await browser.getPuppeteer()
+          const pages = await puppeteerBrowser.pages()
+          await pages[0].screenshot({ path: filePath, fullPage: true })
+          msg.payload = `Full screenshot saved to path: ${filePath}`
         } else if (config.action === 'pageSource') {
-          node.log = 'Get the Page sorce (Source code of the web page).'
+          node.log = 'Get the Page source (Source code of the web page).'
           msg.payload = await browser.getPageSource()
+        } else if (config.action === 'getMHTML') {
+          node.log = 'Get the MHTML (web page archive) of the web page.'
+          const puppeteerBrowser = await browser.getPuppeteer()
+          const pages = await puppeteerBrowser.pages()
+          const client = await pages[0].target().createCDPSession()
+          await client.send('Page.enable')
+          const {data} = await client.send('Page.captureSnapshot', { format: 'mhtml' })
+          msg.payload = data
         } else if (config.action === 'getCookies') {
           node.log = 'Get the cookies stored.'
           msg.payload = await browser.getAllCookies()

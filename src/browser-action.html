@@ -5,6 +5,7 @@
     $('#actionWidth').hide()
     $('#actionHeight').hide()
     $('#actionValue').hide()
+    $('#filePath').hide()
     if (action === 'setSize') {
       $('#actionWidth').show()
       $('#actionHeight').show()
@@ -12,8 +13,11 @@
     if (action === 'navigateTo') {
       $('#actionURL').show()
     }
-    if (action === 'keyStorkes') {
+    if (action === 'keyStrokes') {
       $('#actionValue').show()
+    }
+    if (action === 'takeFullScreenShot') {
+      $('#filePath').show()
     }
   }
 
@@ -26,7 +30,8 @@
       url: { value: '' },
       width: { value: '' },
       height: { value: '' },
-      keysArr: { value: '' }
+      keysArr: { value: '' },
+      filePath: { value: '' }
     },
     inputs: 1,
     outputs: 1,
@@ -53,7 +58,9 @@
           <option value="setSize">Set window Size</option>
           <option value="maximize">Maximize Window</option>
           <option value="takeScreenShot">Screenshot</option>
+          <option value="takeFullScreenShot">Full Screenshot</option>
           <option value="pageSource">Get Page Source</option>
+          <option value="getMHTML">Get MTHML</option>
           <option value="print">Print</option>
           <option value="keyStrokes">Key Strokes</option>
           <option value="getCookies">Get All Cookies</option>
@@ -74,6 +81,10 @@
   <div class="form-row" id="actionValue">
     <label for="node-input-keysArr"><i class="fa fa-tasks"></i> Key Values</label>
     <input id="node-input-keysArr" type="text">
+  </div>
+  <div class="form-row" id="filePath">
+    <label for="node-input-filePath"><i class="fa fa-tasks"></i> File Path</label>
+    <input id="node-input-filePath" type="text">
   </div>
   <div class="form-row">
       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
@@ -100,6 +111,9 @@
           <dd>See the list of values as keys. click <a href="https://w3c.github.io/webdriver/#keyboard-actions">here</a>.</dd>
           <dd>A string with , separated key values, which will be converted to an array of strings.</dd>
           <dd>Can be parameterized using <code>msg.keysArr</code>, by leaving the Key Values empty on node configuration.</dd>
+          <dt>filePath: <span class="property-type">string</span></dt>
+          <dd>File path to save the full screenshot image, when we select the action as "takeFullScreenShot"</dd>
+          <dd>Can be parameterized using <code>msg.filePath</code>, by leaving the File Path empty on node configuration.</dd>
       </dl>
 
   <h3>Outputs</h3>
