@@ -1,5 +1,5 @@
 <script type="text/javascript">
-  function setAction() {
+  const setAction = () => {
     let action = $('#node-input-action').val()
     $('#actionSendKeys').hide()
     $('#getAttribute').hide()
@@ -11,13 +11,61 @@
     }
   }
 
+  const showSelectors = () => {
+    let locateType = $('#node-input-locateType').prop('checked')
+    if (locateType) {
+      $('.node-input-locateValues-container-row').show()
+      $('#node-input-locateValue').parent().hide()
+      $('#node-input-locateUsing').parent().hide()
+    } else {
+      $('.node-input-locateValues-container-row').hide()
+      $('#node-input-locateValue').parent().show()
+      $('#node-input-locateUsing').parent().show()
+    }
+  }
+
+  const multiSelectorsUI = (node) => {
+        $('#node-input-locateValues-container').css('min-height', '50vh').css('min-width', '600px').editableList({
+            addItem: function (container, index, data) {
+                container.css({
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap'
+                });
+                let fragment = document.createDocumentFragment();
+                var row = $('<div/>', { style: "display:flex;" }).appendTo(fragment);
+                var selectField = $('<select/>', { class: "node-input-locateValues-using", style: "width:30%; margin-right:10px;border-radius:5px; border: 1px solid lightgray; outline-color: rgba(85, 150, 230, 0.8); outline-width: thin;" }).appendTo(row);
+                selectField.append($('<option>', { value: 'id', text: 'id' }));
+                selectField.append($('<option>', { value: 'name', text: 'name' }));
+                selectField.append($('<option>', { value: 'css selector', text: 'CSS selector' }));
+                selectField.append($('<option>', { value: 'link text', text: 'Link text' }));
+                selectField.append($('<option>', { value: 'partial link text', text: 'Partial link text' }));
+                selectField.append($('<option>', { value: 'tag name', text: 'Tag name' }));
+                selectField.append($('<option>', { value: 'xpath', text: 'XPath' }));
+                var inputField = $('<input/>', { class: "node-input-locateValues-value", style: "width:65%; margin-right:10px;border-radius:5px; border: 1px solid lightgray; outline-color: rgba(85, 150, 230, 0.8); outline-width: thin;", placeholder: "selector" }).appendTo(row);
+                if (data === null || data === undefined) {
+                    data = { using: 'xpath', value: '' }
+                }
+                selectField.val(data.using)
+                inputField.val(data.value)
+                container.append(fragment)
+            },
+            removable: true,
+            sortable: true
+        })
+
+        $('#node-input-locateValues-container').editableList('addItems', node.locateValues || []);
+    }
+
+
   RED.nodes.registerType('element-action', {
     category: 'Webdriver IO',
     color: '#a6bbcf',
     defaults: {
       name: { value: '' },
       locateUsing: { value: 'xpath' },
+      locateType: { value: false },
       locateValue: { value: '' },
+      locateValues: { value: [] },
       action: { value: 'click' },
       sendKeys: {
         value: '',
@@ -29,38 +77,46 @@
     inputs: 1,
     outputs: 1,
     icon: 'white-globe.png',
-    label: function() {
+    label: function () {
       return this.name || 'element action'
     },
-    oneditprepare: function() {
+    oneditprepare: function () {
+      var that = this
       setAction()
+      showSelectors()
+      multiSelectorsUI(that)
       $('#node-input-sendKeys').typedInput({
         default: 'str',
         typeField: $('#node-input-object'),
         types: ['msg', 'flow', 'global', 'str']
       })
+    }, 
+    oneditsave: function () {
+      var node = this
+      var locateType = $('#node-input-locateType').prop('checked')
+      node.locateType = locateType
+      if (locateType) {
+        var locateValues = $('#node-input-locateValues-container').editableList('items')
+        node.locateValues = []
+        locateValues.each(function () {
+          var using = $(this).find('.node-input-locateValues-using').val()
+          var value = $(this).find('.node-input-locateValues-value').val()
+          node.locateValues.push({ using, value })
+        })
+      } else {
+        node.locateValues = []
+        node.locateValue = $('#node-input-locateValue').val()
+        node.locateUsing = $('#node-input-locateUsing').val()
+      }
     }
   })
 </script>
 
 <script type="text/x-red" data-template-name="element-action">
   <div class="form-row">
-      <label for="node-input-locateUsing"><i class="fa fa-tasks"></i> Locate Method</label>
-      <select type="text" id="node-input-locateUsing" style="width:70%;">
-          <option value="id">id</option>
-          <option value="name">name</option>
-          <option value="css selector">CSS selector</option>
-          <option value="link text">Link text</option>
-          <option value="partial link text">Partial link text</option>
-          <option value="tag name">Tag name</option>
-          <option value="xpath" selected>XPath</option>
-      </select>
+      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+      <input id="node-input-name" type="text">
   </div>
-  <div class="form-row">
-      <label for="node-input-locateValue"><i class="fa fa-tasks"></i> Selector</label>
-      <input id="node-input-locateValue" type="text">
-  </div>
-
   <div class="form-row">
       <label for="node-input-action"><i class="fa fa-tasks"></i> Action</label>
       <select type="text" id="node-input-action" style="width:70%;" onchange="setAction()">
@@ -84,9 +140,29 @@
       <input id="node-input-attribute" type="text">
   </div>
   <div class="form-row">
-      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-      <input id="node-input-name" type="text">
+      <label for="node-input-locateType"><i class="fa fa-tasks"></i> Multiple Selector?</label>
+      <input id="node-input-locateType" type="checkbox" style="width:30px;" onchange="showSelectors()">
   </div>
+  <div class="form-row">
+      <label for="node-input-locateUsing"><i class="fa fa-tasks"></i> Locate Method</label>
+      <select type="text" id="node-input-locateUsing" style="width:70%;">
+          <option value="id">id</option>
+          <option value="name">name</option>
+          <option value="css selector">CSS selector</option>
+          <option value="link text">Link text</option>
+          <option value="partial link text">Partial link text</option>
+          <option value="tag name">Tag name</option>
+          <option value="xpath" selected>XPath</option>
+      </select>
+  </div>  
+  <div class="form-row">
+      <label for="node-input-locateValue"><i class="fa fa-tasks"></i> Selector</label>
+      <input id="node-input-locateValue" type="text">
+  </div>
+  <div class="form-row node-input-locateValues-container-row" style="position:relative">
+        <h4 style="margin-bottom: -3px;">Selectors :</h4>
+        <ol id="node-input-locateValues-container"></ol>
+  </div>   
 </script>
 
 <script type="text/x-red" data-help-name="element-action">

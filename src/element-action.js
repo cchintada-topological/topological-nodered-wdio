@@ -41,9 +41,11 @@ module.exports = function(RED) {
 
     node.on('input', async (msg) => {
       try {
-        let locateUsing = config.locateUsing || msg.locateUsing
-        let locateValue = config.locateValue || msg.locateValue
-
+        let multiple = config.locateType || msg.locateType
+        let locateValues = config.locateValues || msg.locateValues
+        let locateUsing = multiple ? locateValues[0].using : config.locateUsing || msg.locateUsing
+        let locateValue = multiple ? locateValues[0].value : config.locateValue || msg.locateValue
+        
         let browser = await common.getBrowser(context)
         let capabilities = browser.capabilities
         let elementId = await common.getElementId(
