@@ -136,7 +136,7 @@ module.exports.log = async (node) => {
   let document = (await context.global.get("document")) || "";
   await context.global.set(
     "document",
-    `${document}${stepCount}. Node: ${node.name} - ${node.log}\n`
+    `${document}${stepCount}. Node (${node.id}): ${node.name} - ${node.log}\n`
   );
   await context.global.set("stepCount", stepCount);
 };

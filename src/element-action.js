@@ -49,6 +49,7 @@ module.exports = function (RED) {
         let browser = await common.getBrowser(context);
         let capabilities = browser.capabilities;
         let elementId = null;
+        node.log = "";
 
         if (!multiple) {
           elementId = await common.getElementId(
@@ -63,21 +64,29 @@ module.exports = function (RED) {
           for (let i = 0; i < locateValues.length; i++) {
             const { using, value } = locateValues[i];
             elementId = await common.getElementId(browser, using, value);
-            if (elementId) break;
-            else node.warn(`Element not found using ${using}: ${value}`);
+            if (elementId) {
+              node.log += `Attempt ${i + 1}: Element found using ${using}: ${value}\n`;
+              locateUsing = using
+              locateValue = value
+              break;
+            }
+            else {
+              node.log += `Attempt ${i + 1}: Element not found using ${using}: ${value}\n`;
+              node.warn(`Element not found using ${using}: ${value}`);
+            }
           }
           if (!elementId) {
-            throw new Error(`Element not found using all selector  values`);
+            throw new Error(`Element not found using all selector values`);
           }
         }
 
         let attribute = config.attribute || msg.attribute;
 
         if (config.action === "click") {
-          node.log = `Click on the webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Click on the webelement identified using ${locateUsing}: "${locateValue}".`;
           await browser.elementClick(elementId);
         } else if (config.action === "clear") {
-          node.log = `Clear the Value of the webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Clear the Value of the webelement identified using ${locateUsing}: "${locateValue}".`;
           await browser.elementClear(elementId);
         } else if (config.action === "sendKeys") {
           let value = await getTypeInputValue(
@@ -85,22 +94,22 @@ module.exports = function (RED) {
             config.object,
             config.sendKeys
           );
-          node.log = `Enter the Value: "${value}" to the webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Enter the Value: "${value}" to the webelement identified using ${locateUsing}: "${locateValue}".`;
           await browser.elementSendKeys(
             elementId,
             capabilities.version ? Array.from(value) : value
           );
         } else if (config.action === "getValue") {
-          node.log = `Get the Value of webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Get the Value of webelement identified using ${locateUsing}: "${locateValue}".`;
           msg.payload = await browser.getElementAttribute(elementId, "value");
         } else if (config.action === "getText") {
-          node.log = `Get the Text of webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Get the Text of webelement identified using ${locateUsing}: "${locateValue}".`;
           msg.payload = await browser.getElementText(elementId);
         } else if (config.action === "getAttribute") {
-          node.log = `Get the Attribute: "${attribute}" of webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Get the Attribute: "${attribute}" of webelement identified using ${locateUsing}: "${locateValue}".`;
           msg.payload = await browser.getElementAttribute(elementId, attribute);
         } else if (config.action === "takeScreenShot") {
-          node.log = "Take the screenshot of the webelement.";
+          node.log += "Take the screenshot of the webelement.";
           msg.payload = await browser.takeElementScreenshot(elementId);
         } else if (config.action === "hover") {
           let element = await common.getElement(
@@ -108,13 +117,14 @@ module.exports = function (RED) {
             locateUsing,
             locateValue
           );
-          node.log = `Hover on the webelement identified using ${locateUsing}: "${locateValue}".`;
+          node.log += `Hover on the webelement identified using ${locateUsing}: "${locateValue}".`;
           msg.payload = await element.moveTo();
         }
         await common.log(node);
         common.successStatus(node);
         node.send(msg);
       } catch (e) {
+        node.log = `Error: ${e.message}`;
         await common.log(node);
         common.handleError(e, node, msg);
       }
