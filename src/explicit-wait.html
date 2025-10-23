@@ -16,8 +16,10 @@
     color: '#a6bbcf',
     defaults: {
       name: { value: '' },
+      locateType: { value: false },
       locateUsing: { value: 'xpath' },
       locateValue: { value: '' },
+      locateValues: { value: [] },
       action: { value: '' },
       time: { value: '' },
       reverse: { value: 'false' },
@@ -30,29 +32,37 @@
       return this.name || 'explicit wait'
     },
     oneditprepare: function() {
+      var that = this
       setExplicitAction()
+      showSelectors()
+      multiSelectorsUI(that)
+    }, 
+    oneditsave: function () {
+      var node = this
+      var locateType = $('#node-input-locateType').prop('checked')
+      node.locateType = locateType
+      if (locateType) {
+        var locateValues = $('#node-input-locateValues-container').editableList('items')
+        node.locateValues = []
+        locateValues.each(function () {
+          var using = $(this).find('.node-input-locateValues-using').val()
+          var value = $(this).find('.node-input-locateValues-value').val()
+          node.locateValues.push({ using, value })
+        })
+      } else {
+        node.locateValues = []
+        node.locateValue = $('#node-input-locateValue').val()
+        node.locateUsing = $('#node-input-locateUsing').val()
+      }
     }
   })
 </script>
 
 <script type="text/x-red" data-template-name="explicit-wait">
   <div class="form-row">
-      <label for="node-input-locateUsing"><i class="fa fa-tasks"></i> Locate Method</label>
-      <select type="text" id="node-input-locateUsing" style="width:70%;">
-        <option value="id">id</option>
-        <option value="name">name</option>
-        <option value="className">Class Name</option>
-        <option value="css selector">CSS selector</option>
-        <option value="link text">Link text</option>
-        <option value="partial link text">Partial link text</option>
-        <option value="tag name">Tag name</option>
-        <option value="xpath" selected>XPath</option>
-      </select>
-  </div>
-  <div class="form-row">
-      <label for="node-input-locateValue"><i class="fa fa-tasks"></i> Selector</label>
-      <input id="node-input-locateValue" type="text">
-  </div>
+      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+      <input id="node-input-name" type="text">
+  </div>  
   <div class="form-row">
       <label for="node-input-action"><i class="fa fa-tasks"></i> Action</label>
       <select type="text" id="node-input-action" style="width:70%;" onchange="setExplicitAction()">
@@ -77,10 +87,31 @@
       <label for="node-input-error"><i class="fa fa-tasks"></i> Error Message</label>
       <input id="node-input-error" type="text" placeholder="error message">
   </div>
+   <div class="form-row">
+      <label for="node-input-locateType"><i class="fa fa-tasks"></i> Multiple Selector?</label>
+      <input id="node-input-locateType" type="checkbox" style="width:30px;" onchange="showSelectors()">
+  </div>  
   <div class="form-row">
-      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-      <input id="node-input-name" type="text">
+      <label for="node-input-locateUsing"><i class="fa fa-tasks"></i> Locate Method</label>
+      <select type="text" id="node-input-locateUsing" style="width:70%;">
+        <option value="id">id</option>
+        <option value="name">name</option>
+        <option value="className">Class Name</option>
+        <option value="css selector">CSS selector</option>
+        <option value="link text">Link text</option>
+        <option value="partial link text">Partial link text</option>
+        <option value="tag name">Tag name</option>
+        <option value="xpath" selected>XPath</option>
+      </select>
   </div>
+  <div class="form-row">
+      <label for="node-input-locateValue"><i class="fa fa-tasks"></i> Selector</label>
+      <input id="node-input-locateValue" type="text">
+  </div>
+  <div class="form-row node-input-locateValues-container-row" style="position:relative">
+        <h4 style="margin-bottom: 3px;">Selectors :</h4>
+        <ol id="node-input-locateValues-container"></ol>
+  </div>  
 </script>
 
 <script type="text/x-red" data-help-name="explicit-wait">
