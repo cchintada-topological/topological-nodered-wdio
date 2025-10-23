@@ -13,7 +13,6 @@ module.exports = function(RED) {
 
         let browser = await common.getBrowser(node.context())
         let locator = await common.getLocator(
-          browser,
           locateUsing,
           locateValue
         )
