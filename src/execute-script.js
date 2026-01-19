@@ -4,6 +4,7 @@ module.exports = function (RED) {
   function executeScript(config) {
     RED.nodes.createNode(this, config)
     const node = this
+    const context = node.context();
 
     node.on('input', async (msg) => {
       try {
