@@ -13,25 +13,30 @@ module.exports = function (RED) {
         let locateValues = config.locateValues || msg.locateValues;
         let locateUsing = config.locateUsing || msg.locateUsing;
         let locateValue = config.locateValue || msg.locateValue;
-
-        let browser = await common.getBrowser(context);
-        let elementId = null;
+        let element = null;
         node.log = "";
 
+        let browser = await common.getBrowser(context);
+
         if (!multiple) {
-          elementId = await common.getElementId(
-            browser,
+          let locator = await common.getLocator(
             locateUsing,
             locateValue
-          );
-          if (!elementId) {
+          )
+          element = await browser.$(locator)
+          if (!element) {
             throw new Error(`Element not found using ${locateUsing}: ${locateValue}`);
           }
-        } else {
+        }
+        else {
           for (let i = 0; i < locateValues.length; i++) {
             const { using, value } = locateValues[i];
-            elementId = await common.getElementId(browser, using, value);
-            if (elementId) {
+            let locator = await common.getLocator(
+              locateUsing,
+              locateValue
+            )
+            element = await browser.$(locator)
+            if (element) {
               node.log += `Attempt ${i + 1}: Element found using ${using}: ${value}\n`;
               locateUsing = using
               locateValue = value
@@ -42,49 +47,40 @@ module.exports = function (RED) {
               node.warn(`Element not found using ${using}: ${value}`);
             }
           }
-          if (!elementId) {
+          if (!element) {
             throw new Error(`Element not found using all selector values`);
           }
         }
 
         if (config.check === 'clickable') {
           node.log += `Check the webelement is clickable, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isClickable()
+          msg.payload = await element.isClickable()
         } else if (config.check === 'displayed') {
           node.log += `Check the webelement is displayed, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isDisplayed()
+          msg.payload = await element.isDisplayed()
         } else if (config.check === 'displayedInView') {
           node.log += `Check the webelement is displayed in view port, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isDisplayedInViewport()
+          msg.payload = await element.isDisplayedInViewport()
         } else if (config.check === 'enabled') {
           node.log += `Check the webelement is enabled, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isEnabled()
+          msg.payload = await element.isEnabled()
         } else if (config.check === 'existing') {
           node.log += `Check the webelement is existing, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isExisting()
+          msg.payload = await element.isExisting()
         } else if (config.check === 'focused') {
           node.log += `Check the webelement is focused, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isFocused()
+          msg.payload = await element.isFocused()
         } else if (config.check === 'selected') {
           node.log += `Check the webelement is selected, identified using ${locateUsing}: "${locateValue}".`
-          msg.payload = await browser.$(locator).isSelected()
+          msg.payload = await element.isSelected()
         }
         await common.log(node)
         common.successStatus(node)
         node.send(msg)
       } catch (e) {
-        // if(e.message == 'unable to find'){
-        //   msg.payload = false
-        //   node.log = `Webelement is NOT displayed, identified using ${locateUsing}: "${locateValue}".`
-        //   await common.log(node)
-        //   common.successStatus(node)
-        //   node.send(msg)
-        // }
-        // else{
         await common.log(node)
         common.handleError(e, node, msg)
       }
-      //}
     })
   }
   RED.nodes.registerType('element-check', elementCheck)
