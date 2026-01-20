@@ -10,12 +10,18 @@ module.exports = function(RED) {
       try {
         let locateUsing = config.locateUsing || msg.locateUsing
         let locateValue = config.locateValue || msg.locateValue
+        let element = null;
+        node.log = "";
 
         let browser = await common.getBrowser(node.context())
         let locator = await common.getLocator(
           locateUsing,
           locateValue
         )
+        element = await browser.$(locator)
+        if(!element) {
+          throw new Error(`Element not found using ${locateUsing}: ${locateValue}`);
+        }
 
         let time = parseInt(config.time || msg.time)
         let reverse = config.reverse === 'true' || msg.reverse
@@ -23,17 +29,16 @@ module.exports = function(RED) {
 
         if (config.action === 'displayed') {
           node.log = `Waiting for the element to be displayed for ${time}, identified using ${locateUsing}: "${locateValue}".`
-          await browser.$(locator).waitForDisplayed({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
+          await element.waitForDisplayed({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
         } else if (config.action === 'enabled') {
           node.log = `Waiting for the element to be enabled for ${time}, identified using ${locateUsing}: "${locateValue}".`
-          await browser.$(locator).waitForEnabled({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
+          await element.waitForEnabled({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
         } else if (config.action === 'exists') {
           node.log = `Waiting for the element to be exists for ${time}, identified using ${locateUsing}: "${locateValue}".`
-          await browser.$(locator).waitForExist({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
+          await element.waitForExist({timeout: time, reverse: reverse, timeoutMsg: error, interval : 2000})
         } else if (config.action === 'until') {
-          await browser.$(locator).waitUntil()
+          await element.waitUntil()
         }
-
         await common.log(node)
         common.successStatus(node)
         node.send(msg)
