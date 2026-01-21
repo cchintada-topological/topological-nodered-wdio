@@ -5,6 +5,7 @@ module.exports = function (RED) {
     RED.nodes.createNode(this, config);
     const node = this;
     const context = node.context();
+    common.clearStatus(node);
 
     var getTypeInputValue = async (msg, type, value) => {
       var r = "";
@@ -40,7 +41,6 @@ module.exports = function (RED) {
 
     node.on("input", async (msg) => {
       try {        
-        common.clearStatus(node);
         let multiple = config.locateType || msg.locateType;
         let locateValues = config.locateValues || msg.locateValues;
         let locateUsing = config.locateUsing || msg.locateUsing;
