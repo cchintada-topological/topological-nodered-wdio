@@ -89,7 +89,7 @@ module.exports.getLocator = async (using, value) => {
 };
 
 module.exports.handleError = (e, node, msg) => {
-  console.log(e);
+  if(!e.Error.includes('still not existing after')) console.log(e);
   module.exports.errorStatus(node);
   node.error(e, msg);
 };
